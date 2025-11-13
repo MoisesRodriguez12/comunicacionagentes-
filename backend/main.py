@@ -33,6 +33,11 @@ async def lifespan(app: FastAPI):
     execution_agent = ExecutionAgent(GEMINI_API_KEY)
     notification_agent = NotificationAgent()
     agui_protocol = AGUIProtocol()
+    
+    # Conectar database_agent con planning_agent para cargar planes
+    planning_agent.set_database_agent(database_agent)
+    
+    print("INFO:     Todos los agentes inicializados correctamente")
     yield
     database_agent.close()
 
@@ -134,6 +139,82 @@ def create_plan(event_request: EventRequest):
         notification_id = notification_agent.create_custom_notification(
             title="Plan Creado",
             body=f"Se ha creado un plan para el evento '{event_request.event_name}' con {plan['total_tasks']} tareas",
+            level="success",
+            data={"plan_id": plan["plan_id"], "event_id": event_id}
+        )
+        
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Planificador",
+            receiver="UI",
+            action="Plan",
+            status="success",
+            payload={
+                "plan": plan,
+                "event_id": event_id,
+                "notification_id": notification_id
+            }
+        )
+        
+        return agui_response.model_dump()
+        
+    except Exception as e:
+        agui_error = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Planificador",
+            receiver="UI",
+            action="Plan",
+            status="error",
+            payload={"error": str(e)}
+        )
+        return agui_error.model_dump()
+
+
+@app.post("/api/events/{event_id}/replan")
+def regenerate_plan(event_id: str):
+    try:
+        message_id = str(uuid.uuid4())
+        
+        # Obtener el evento de la base de datos
+        acp_message = database_agent.acp_protocol.create_read_request(
+            message_id=str(uuid.uuid4()),
+            sender="UI",
+            collection="events",
+            query_filter={"event_id": event_id}
+        )
+        
+        event_response = database_agent.process_acp_message(acp_message.model_dump())
+        
+        if event_response.status != "success" or not event_response.data:
+            agui_error = agui_protocol.create_response(
+                message_id=str(uuid.uuid4()),
+                sender="Planificador",
+                receiver="UI",
+                action="Plan",
+                status="error",
+                payload={"error": "Evento no encontrado"}
+            )
+            return agui_error.model_dump()
+        
+        event_details = event_response.data
+        
+        # Generar un nuevo plan
+        plan = planning_agent.generate_plan(event_details)
+        
+        # Guardar el nuevo plan en la base de datos
+        planning_agent.save_plan_to_database(database_agent, plan["plan_id"])
+        
+        # Notificar
+        notify_msg = planning_agent.notify_progress(
+            notification_agent.agent_name,
+            plan["plan_id"],
+            f"Nuevo plan generado para el evento '{event_details.get('event_name')}' con {plan['total_tasks']} tareas"
+        )
+        notification_agent.receive_event(notify_msg)
+        
+        notification_id = notification_agent.create_custom_notification(
+            title="Plan Regenerado",
+            body=f"Se ha creado un nuevo plan para el evento '{event_details.get('event_name')}' con {plan['total_tasks']} tareas",
             level="success",
             data={"plan_id": plan["plan_id"], "event_id": event_id}
         )

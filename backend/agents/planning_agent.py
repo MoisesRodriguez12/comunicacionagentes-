@@ -36,6 +36,7 @@ class PlanningAgent:
         self.a2a_protocol = A2AProtocol()
         self.acp_protocol = ACPProtocol()
         self.current_plans = {}
+        self.database_agent = None
     
     def generate_plan(self, event_details: Dict[str, Any]) -> Dict[str, Any]:
         plan_id = str(uuid.uuid4())
@@ -268,7 +269,58 @@ Devuelve UNICAMENTE un JSON valido con el siguiente formato (sin texto adicional
         return []
     
     def get_plan(self, plan_id: str) -> Dict[str, Any]:
-        return self.current_plans.get(plan_id, {})
+        # Primero buscar en memoria
+        if plan_id in self.current_plans:
+            return self.current_plans[plan_id]
+        
+        # Si no está en memoria, cargar desde base de datos
+        if self.database_agent:
+            try:
+                message_id = str(uuid.uuid4())
+                acp_message = self.acp_protocol.create_read_request(
+                    message_id=message_id,
+                    sender=self.agent_name,
+                    collection="plans",
+                    query_filter={"plan_id": plan_id}
+                )
+                
+                response = self.database_agent.process_acp_message(acp_message.model_dump())
+                if response.status == "success" and response.data:
+                    # Guardar en memoria para próximas consultas
+                    self.current_plans[plan_id] = response.data
+                    return response.data
+            except Exception as e:
+                print(f"Error cargando plan desde DB: {e}")
+        
+        return {}
     
     def list_plans(self) -> List[Dict[str, Any]]:
+        # Cargar todos los planes desde base de datos
+        if self.database_agent:
+            try:
+                message_id = str(uuid.uuid4())
+                acp_message = self.acp_protocol.create_query_request(
+                    message_id=message_id,
+                    sender=self.agent_name,
+                    collection="plans",
+                    query_filter={},
+                    sort={"created_at": -1},
+                    limit=100
+                )
+                
+                response = self.database_agent.process_acp_message(acp_message.model_dump())
+                if response.status == "success" and response.data:
+                    # Actualizar cache en memoria
+                    for plan in response.data:
+                        if "plan_id" in plan:
+                            self.current_plans[plan["plan_id"]] = plan
+                    return response.data
+            except Exception as e:
+                print(f"Error cargando planes desde DB: {e}")
+        
+        # Fallback a planes en memoria
         return list(self.current_plans.values())
+    
+    def set_database_agent(self, database_agent: Any):
+        """Establecer la referencia al database_agent para cargar planes"""
+        self.database_agent = database_agent

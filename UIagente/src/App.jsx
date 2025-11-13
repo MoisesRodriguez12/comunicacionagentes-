@@ -6,6 +6,7 @@ function App() {
   const [plans, setPlans] = useState([])
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(false)
+  const [executingPlanId, setExecutingPlanId] = useState(null)
   const [showEventForm, setShowEventForm] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
 
@@ -93,6 +94,7 @@ function App() {
 
   const handleExecutePlan = async (planId) => {
     setLoading(true)
+    setExecutingPlanId(planId)
     try {
       const response = await fetch(`${API_BASE}/execute/${planId}`, {
         method: 'POST'
@@ -125,6 +127,42 @@ function App() {
     } catch (error) {
       console.error('Error executing plan:', error)
       alert(`Error al ejecutar plan: ${error.message}`)
+    } finally {
+      setLoading(false)
+      setExecutingPlanId(null)
+    }
+  }
+
+  const handleReplanEvent = async (eventId, eventName) => {
+    if (!confirm(`¿Deseas generar un nuevo plan para el evento "${eventName}"?`)) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/events/${eventId}/replan`, {
+        method: 'POST'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log('Replan response:', data)
+      
+      if (data.status === 'success') {
+        await fetchPlans()
+        await fetchNotifications()
+        const tasksCount = data.payload?.plan?.total_tasks || 0
+        alert(`Nuevo plan generado exitosamente con ${tasksCount} tareas.`)
+        setActiveView('plans')
+      } else {
+        alert(`Error: ${data.payload?.error || 'Error desconocido al generar plan'}`)
+      }
+    } catch (error) {
+      console.error('Error replanning event:', error)
+      alert(`Error al generar nuevo plan: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -167,6 +205,7 @@ function App() {
             showForm={showEventForm}
             setShowForm={setShowEventForm}
             onCreateEvent={handleCreateEvent}
+            onReplanEvent={handleReplanEvent}
             loading={loading}
           />
         )}
@@ -176,6 +215,7 @@ function App() {
             plans={plans}
             onExecute={handleExecutePlan}
             loading={loading}
+            executingPlanId={executingPlanId}
             selectedPlan={selectedPlan}
             setSelectedPlan={setSelectedPlan}
           />
@@ -189,7 +229,7 @@ function App() {
   )
 }
 
-function EventsView({ events, showForm, setShowForm, onCreateEvent, loading }) {
+function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEvent, loading }) {
   const [formData, setFormData] = useState({
     event_name: '',
     event_type: 'academico',
@@ -314,13 +354,23 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, loading }) {
             <p className="text-sm text-gray-600 mb-1">Asistentes: {event.expected_attendees}</p>
             <p className="text-sm text-gray-600 mb-1">Presupuesto: ${event.budget}</p>
             <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-            <span className={`inline-block px-2 py-1 rounded text-xs ${
-              event.status === 'planning' ? 'bg-yellow-200 text-yellow-800' :
-              event.status === 'executing' ? 'bg-blue-200 text-blue-800' :
-              'bg-green-200 text-green-800'
-            }`}>
-              {event.status}
-            </span>
+            <div className="flex items-center justify-between">
+              <span className={`inline-block px-2 py-1 rounded text-xs ${
+                event.status === 'planning' ? 'bg-yellow-200 text-yellow-800' :
+                event.status === 'executing' ? 'bg-blue-200 text-blue-800' :
+                'bg-green-200 text-green-800'
+              }`}>
+                {event.status}
+              </span>
+              <button
+                onClick={() => onReplanEvent(event.event_id, event.event_name)}
+                disabled={loading}
+                className="text-sm bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 disabled:bg-gray-400"
+                title="Generar nuevo plan para este evento"
+              >
+                Replantear
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -328,49 +378,53 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, loading }) {
   )
 }
 
-function PlansView({ plans, onExecute, loading, selectedPlan, setSelectedPlan }) {
+function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, setSelectedPlan }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Planes Generados</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-4">
-          {plans.map((plan) => (
-            <div
-              key={plan.plan_id}
-              className={`bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition ${
-                selectedPlan?.plan_id === plan.plan_id ? 'ring-2 ring-blue-600' : ''
-              }`}
-              onClick={() => setSelectedPlan(plan)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold">{plan.event_details.event_name}</h3>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  plan.status === 'created' ? 'bg-blue-200 text-blue-800' :
-                  plan.status === 'sent_to_executor' ? 'bg-yellow-200 text-yellow-800' :
-                  'bg-green-200 text-green-800'
-                }`}>
-                  {plan.status}
-                </span>
+          {plans.map((plan) => {
+            const isExecuting = executingPlanId === plan.plan_id
+            
+            return (
+              <div
+                key={plan.plan_id}
+                className={`bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg transition ${
+                  selectedPlan?.plan_id === plan.plan_id ? 'ring-2 ring-blue-600' : ''
+                }`}
+                onClick={() => setSelectedPlan(plan)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold">{plan.event_details.event_name}</h3>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    plan.status === 'created' ? 'bg-blue-200 text-blue-800' :
+                    plan.status === 'sent_to_executor' ? 'bg-yellow-200 text-yellow-800' :
+                    'bg-green-200 text-green-800'
+                  }`}>
+                    {plan.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{plan.plan_summary}</p>
+                <p className="text-sm text-gray-500">Tareas: {plan.total_tasks}</p>
+                <p className="text-sm text-gray-500">Duracion estimada: {plan.estimated_duration}</p>
+                
+                {plan.status === 'created' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onExecute(plan.plan_id)
+                    }}
+                    disabled={loading}
+                    className="mt-3 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+                  >
+                    {isExecuting ? 'Ejecutando...' : loading ? 'Ocupado...' : 'Ejecutar Plan'}
+                  </button>
+                )}
               </div>
-              <p className="text-sm text-gray-600 mb-2">{plan.plan_summary}</p>
-              <p className="text-sm text-gray-500">Tareas: {plan.total_tasks}</p>
-              <p className="text-sm text-gray-500">Duracion estimada: {plan.estimated_duration}</p>
-              
-              {plan.status === 'created' && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onExecute(plan.plan_id)
-                  }}
-                  disabled={loading}
-                  className="mt-3 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
-                >
-                  {loading ? 'Ejecutando...' : 'Ejecutar Plan'}
-                </button>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {selectedPlan && (
