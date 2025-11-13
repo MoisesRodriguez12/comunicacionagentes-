@@ -25,7 +25,10 @@ import {
   TrophyIcon,
   UserGroupIcon,
   StarIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
+  AcademicCapIcon,
+  UserPlusIcon,
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline'
 import {
   CalendarDaysIcon as CalendarDaysIconSolid,
@@ -34,7 +37,9 @@ import {
   CheckCircleIcon as CheckCircleIconSolid,
   ExclamationTriangleIcon as ExclamationTriangleIconSolid,
   InformationCircleIcon as InformationCircleIconSolid,
-  XCircleIcon as XCircleIconSolid
+  XCircleIcon as XCircleIconSolid,
+  CheckBadgeIcon as CheckBadgeIconSolid,
+  UserGroupIcon as UserGroupIconSolid
 } from '@heroicons/react/24/solid'
 
 function App() {
@@ -46,6 +51,11 @@ function App() {
   const [executingPlanId, setExecutingPlanId] = useState(null)
   const [showEventForm, setShowEventForm] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
+  const [availableEvents, setAvailableEvents] = useState([])
+  const [studentRegistrations, setStudentRegistrations] = useState([])
+  const [studentInfo, setStudentInfo] = useState({ name: '', email: '', studentId: '' })
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const [dashboardStats, setDashboardStats] = useState(null)
 
   const API_BASE = 'http://localhost:8000/api'
 
@@ -53,7 +63,23 @@ function App() {
     fetchEvents()
     fetchPlans()
     fetchNotifications()
+    
+    // Cargar estadísticas del dashboard
+    fetchDashboardStats().then(stats => {
+      if (stats) {
+        setDashboardStats(stats)
+      }
+    })
   }, [])
+
+  useEffect(() => {
+    if (activeView === 'students') {
+      fetchAvailableEvents()
+      if (studentInfo.email) {
+        fetchStudentRegistrations(studentInfo.email)
+      }
+    }
+  }, [activeView, studentInfo.email])
 
   const fetchEvents = async () => {
     try {
@@ -92,6 +118,99 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
+    }
+  }
+
+  const fetchAvailableEvents = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/events/available`)
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        setAvailableEvents(result.payload.events || [])
+      }
+    } catch (error) {
+      console.error('Error fetching available events:', error)
+    }
+  }
+
+  const fetchStudentRegistrations = async (email) => {
+    if (!email) return
+    try {
+      const response = await fetch(`${API_BASE}/students/${email}/registrations`)
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        setStudentRegistrations(result.payload.registrations || [])
+      }
+    } catch (error) {
+      console.error('Error fetching student registrations:', error)
+    }
+  }
+
+  const registerStudentToEvent = async (eventId) => {
+    if (!studentInfo.name || !studentInfo.email || !studentInfo.studentId) {
+      alert('Por favor completa toda tu información personal')
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/students/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          student_name: studentInfo.name,
+          student_email: studentInfo.email,
+          student_id: studentInfo.studentId,
+          event_id: eventId
+        })
+      })
+
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        alert('¡Registro exitoso! Te has inscrito al evento.')
+        fetchAvailableEvents()
+        fetchStudentRegistrations(studentInfo.email)
+        fetchEvents() // Actualizar eventos para reflejar nuevos cupos
+      } else {
+        alert(result.payload.error || 'Error al registrarse')
+      }
+    } catch (error) {
+      console.error('Error registering student:', error)
+      alert('Error al procesar el registro')
+    }
+  }
+
+  const fetchEventRegistrations = async (eventId) => {
+    try {
+      const response = await fetch(`${API_BASE}/events/${eventId}/registrations`)
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        return result.payload.registrations || []
+      }
+      return []
+    } catch (error) {
+      console.error('Error fetching event registrations:', error)
+      return []
+    }
+  }
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/dashboard/stats`)
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        return result.payload.stats
+      }
+      return null
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+      return null
     }
   }
 
@@ -282,6 +401,18 @@ function App() {
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => setActiveView('students')}
+              className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 ${
+                activeView === 'students'
+                  ? 'border-white text-white bg-white/20'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+              }`}
+            >
+              <AcademicCapIcon className="w-6 h-6" />
+              <span>Estudiantes</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -293,6 +424,7 @@ function App() {
             events={events}
             plans={plans}
             notifications={notifications}
+            dashboardStats={dashboardStats}
             loading={loading}
             onCreateEvent={() => {
               setShowEventForm(true)
@@ -328,12 +460,23 @@ function App() {
         {activeView === 'notifications' && (
           <NotificationsView notifications={notifications} />
         )}
+
+        {activeView === 'students' && (
+          <StudentsView 
+            availableEvents={availableEvents}
+            studentRegistrations={studentRegistrations}
+            studentInfo={studentInfo}
+            setStudentInfo={setStudentInfo}
+            onRegisterToEvent={registerStudentToEvent}
+            loading={loading}
+          />
+        )}
       </main>
     </div>
   )
 }
 
-function DashboardView({ events, plans, notifications, loading, onCreateEvent, onViewPlans, onViewNotifications }) {
+function DashboardView({ events, plans, notifications, dashboardStats, loading, onCreateEvent, onViewPlans, onViewNotifications }) {
   const totalEvents = events.length
   const totalPlans = plans.length
   const totalNotifications = notifications.length
@@ -361,13 +504,22 @@ function DashboardView({ events, plans, notifications, loading, onCreateEvent, o
       borderColor: 'border-blue-200'
     },
     {
-      name: 'Eventos Completados',
-      value: completedEvents,
-      icon: TrophyIcon,
+      name: 'Eventos Disponibles',
+      value: dashboardStats?.available_events || 0,
+      icon: CheckBadgeIcon,
       color: 'from-green-500 to-green-600',
       textColor: 'text-green-600',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200'
+    },
+    {
+      name: 'Inscripciones Totales',
+      value: dashboardStats?.total_registrations || 0,
+      icon: UserGroupIcon,
+      color: 'from-purple-500 to-purple-600',
+      textColor: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200'
     },
     {
       name: 'Notificaciones',
@@ -515,6 +667,30 @@ function DashboardView({ events, plans, notifications, loading, onCreateEvent, o
 }
 
 function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEvent, loading }) {
+  const [eventRegistrations, setEventRegistrations] = useState({})
+
+  useEffect(() => {
+    const fetchAllRegistrations = async () => {
+      const registrationsData = {}
+      for (const event of events) {
+        try {
+          const response = await fetch(`http://localhost:8000/api/events/${event.event_id}/registrations`)
+          const result = await response.json()
+          if (result.status === 'success') {
+            registrationsData[event.event_id] = result.payload.registrations || []
+          }
+        } catch (error) {
+          console.error(`Error fetching registrations for event ${event.event_id}:`, error)
+          registrationsData[event.event_id] = []
+        }
+      }
+      setEventRegistrations(registrationsData)
+    }
+
+    if (events.length > 0) {
+      fetchAllRegistrations()
+    }
+  }, [events])
   const [formData, setFormData] = useState({
     event_name: '',
     event_type: 'academico',
@@ -784,14 +960,50 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
                       })}
                     </div>
                     
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-gray-600">
-                        <UsersIcon className="w-4 h-4 mr-2 text-red-500" />
-                        {event.expected_attendees} asistentes
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center text-gray-600">
+                          <UsersIcon className="w-4 h-4 mr-2 text-red-500" />
+                          Capacidad: {event.expected_attendees}
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <BanknotesIcon className="w-4 h-4 mr-2 text-red-500" />
+                          ${event.budget.toLocaleString()}
+                        </div>
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <BanknotesIcon className="w-4 h-4 mr-2 text-red-500" />
-                        ${event.budget.toLocaleString()}
+                      
+                      {/* Cupos Information */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="font-medium text-gray-700">Cupos Ocupados</span>
+                          <span className="text-gray-600">
+                            {(eventRegistrations[event.event_id] || []).length} / {event.expected_attendees}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              (eventRegistrations[event.event_id] || []).length >= event.expected_attendees
+                                ? 'bg-red-500' 
+                                : (eventRegistrations[event.event_id] || []).length > event.expected_attendees * 0.8
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                            }`}
+                            style={{ 
+                              width: `${Math.min(((eventRegistrations[event.event_id] || []).length / event.expected_attendees) * 100, 100)}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Disponibles: {Math.max(0, event.expected_attendees - (eventRegistrations[event.event_id] || []).length)}</span>
+                          <span className={
+                            (eventRegistrations[event.event_id] || []).length >= event.expected_attendees
+                              ? 'text-red-600 font-medium'
+                              : 'text-gray-500'
+                          }>
+                            {(eventRegistrations[event.event_id] || []).length >= event.expected_attendees ? 'Lleno' : 'Disponible'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
@@ -820,6 +1032,32 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
 }
 
 function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, setSelectedPlan }) {
+  const [planRegistrations, setPlanRegistrations] = useState({})
+
+  useEffect(() => {
+    const fetchPlanRegistrations = async () => {
+      const registrationsData = {}
+      for (const plan of plans) {
+        if (plan.event_details?.event_id) {
+          try {
+            const response = await fetch(`http://localhost:8000/api/events/${plan.event_details.event_id}/registrations`)
+            const result = await response.json()
+            if (result.status === 'success') {
+              registrationsData[plan.event_details.event_id] = result.payload.registrations || []
+            }
+          } catch (error) {
+            console.error(`Error fetching registrations for plan ${plan.plan_id}:`, error)
+            registrationsData[plan.event_details.event_id] = []
+          }
+        }
+      }
+      setPlanRegistrations(registrationsData)
+    }
+
+    if (plans.length > 0) {
+      fetchPlanRegistrations()
+    }
+  }, [plans])
   const getStatusConfig = (status) => {
     const configs = {
       created: {
@@ -926,7 +1164,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                       <p className="text-sm text-black font-medium leading-relaxed">{plan.plan_summary}</p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
                       <div className="bg-red-50 rounded-xl p-3 border-2 border-red-200">
                         <div className="flex items-center text-red-800 font-bold">
                           <ChartBarIcon className="w-4 h-4 mr-2" />
@@ -941,7 +1179,48 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                         </div>
                         <p className="text-xs text-gray-600 font-medium mt-1">Duración</p>
                       </div>
+                      <div className="bg-blue-50 rounded-xl p-3 border-2 border-blue-200">
+                        <div className="flex items-center text-blue-800 font-bold">
+                          <UsersIcon className="w-4 h-4 mr-2" />
+                          {(planRegistrations[plan.event_details?.event_id] || []).length}/{plan.event_details?.expected_attendees || 0}
+                        </div>
+                        <p className="text-xs text-blue-600 font-medium mt-1">Inscritos</p>
+                      </div>
                     </div>
+                    
+                    {/* Cupos Progress Bar */}
+                    {plan.event_details?.expected_attendees && (
+                      <div className="bg-gray-50 rounded-lg p-3 mb-4 border-2 border-gray-200">
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="font-medium text-gray-700">Estado de Inscripciones</span>
+                          <span className="text-gray-600">
+                            {Math.max(0, plan.event_details.expected_attendees - (planRegistrations[plan.event_details.event_id] || []).length)} cupos disponibles
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              (planRegistrations[plan.event_details.event_id] || []).length >= plan.event_details.expected_attendees
+                                ? 'bg-red-500' 
+                                : (planRegistrations[plan.event_details.event_id] || []).length > plan.event_details.expected_attendees * 0.8
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
+                            }`}
+                            style={{ 
+                              width: `${Math.min(((planRegistrations[plan.event_details.event_id] || []).length / plan.event_details.expected_attendees) * 100, 100)}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 text-center">
+                          {(planRegistrations[plan.event_details.event_id] || []).length >= plan.event_details.expected_attendees 
+                            ? '🔴 Evento lleno' 
+                            : (planRegistrations[plan.event_details.event_id] || []).length > plan.event_details.expected_attendees * 0.8
+                              ? '🟡 Pocos cupos' 
+                              : '🟢 Cupos disponibles'
+                          }
+                        </div>
+                      </div>
+                    )}
                     
                     {plan.status === 'created' && (
                       <button
@@ -1203,6 +1482,288 @@ function NotificationsView({ notifications }) {
             )
           })
         )}
+      </div>
+    </div>
+  )
+}
+
+function StudentsView({ availableEvents, studentRegistrations, studentInfo, setStudentInfo, onRegisterToEvent, loading }) {
+  const [showInfoForm, setShowInfoForm] = useState(!studentInfo.name)
+
+  const handleInfoSubmit = (e) => {
+    e.preventDefault()
+    if (studentInfo.name && studentInfo.email && studentInfo.studentId) {
+      setShowInfoForm(false)
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-green-700 to-black rounded-3xl p-8 md:p-12 mb-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-black rounded-2xl flex items-center justify-center border-2 border-white/30">
+              <AcademicCapIcon className="w-9 h-9 text-white" />
+            </div>
+            <div>
+              <h2 className="text-4xl font-bold text-white tracking-tight">Portal de Estudiantes</h2>
+              <p className="text-white/90 mt-2 text-lg">Regístrate a eventos disponibles y gestiona tus inscripciones</p>
+            </div>
+          </div>
+          {studentInfo.name && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
+              <div className="text-center">
+                <p className="text-white font-medium">{studentInfo.name}</p>
+                <p className="text-white/70 text-sm">{studentInfo.studentId}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Student Information Form */}
+      {showInfoForm && (
+        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+              <UserPlusIcon className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Información Personal</h3>
+          </div>
+          
+          <form onSubmit={handleInfoSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre Completo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={studentInfo.name}
+                  onChange={(e) => setStudentInfo({...studentInfo, name: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Tu nombre completo"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Correo Electrónico *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={studentInfo.email}
+                  onChange={(e) => setStudentInfo({...studentInfo, email: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="tu@email.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ID de Estudiante *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={studentInfo.studentId}
+                  onChange={(e) => setStudentInfo({...studentInfo, studentId: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Ej: EST2024001"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200"
+              >
+                Guardar Información
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Quick Edit Button */}
+      {!showInfoForm && studentInfo.name && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowInfoForm(true)}
+            className="text-green-600 hover:text-green-700 font-medium text-sm"
+          >
+            Editar información personal
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        
+        {/* Available Events */}
+        <div className="xl:col-span-2 space-y-6">
+          <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <CalendarDaysIcon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Eventos Disponibles</h3>
+              </div>
+              <span className="bg-green-100 text-green-800 text-sm font-bold px-3 py-2 rounded-full">
+                {availableEvents.filter(e => !e.is_full).length} disponibles
+              </span>
+            </div>
+          </div>
+
+          {availableEvents.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 text-center py-16">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarDaysIcon className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay eventos disponibles</h3>
+              <p className="text-gray-600">Los eventos aparecerán aquí cuando estén disponibles para registro.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {availableEvents.map((event) => (
+                <div key={event.event_id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-200">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="text-lg font-bold text-gray-900">{event.event_name}</h4>
+                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                            {event.event_type}
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-600 mb-4">{event.description}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="flex items-center space-x-2">
+                            <CalendarDaysIcon className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {new Date(event.event_date).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <UserGroupIcon className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {event.current_registrations}/{event.expected_attendees} inscritos
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <BanknotesIcon className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              Presupuesto: ${event.budget?.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-4">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Cupos ocupados</span>
+                            <span>{event.available_spots} disponibles</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                event.is_full 
+                                  ? 'bg-red-500' 
+                                  : event.available_spots < 5 
+                                    ? 'bg-yellow-500' 
+                                    : 'bg-green-500'
+                              }`}
+                              style={{ 
+                                width: `${(event.current_registrations / event.expected_attendees) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="ml-6">
+                        {event.is_full ? (
+                          <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-medium text-center">
+                            <XMarkIcon className="w-5 h-5 mx-auto mb-1" />
+                            <span className="block text-sm">Lleno</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => onRegisterToEvent(event.event_id)}
+                            disabled={loading || !studentInfo.name}
+                            className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            <CheckBadgeIcon className="w-5 h-5" />
+                            <span>Inscribirse</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* My Registrations */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <CheckBadgeIcon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Mis Inscripciones</h3>
+              </div>
+              <span className="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-2 rounded-full">
+                {studentRegistrations.length}
+              </span>
+            </div>
+          </div>
+
+          {studentRegistrations.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 text-center py-12">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckBadgeIcon className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">Sin inscripciones</h3>
+              <p className="text-gray-600 text-sm">Inscríbete a eventos para verlos aquí.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {studentRegistrations.map((registration) => (
+                <div key={registration.registration_id} className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <CheckBadgeIcon className="w-5 h-5 text-green-500" />
+                    <span className="font-medium text-gray-900">Evento #{registration.event_id.slice(-8)}</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>Registrado: {new Date(registration.registered_at).toLocaleDateString('es-ES')}</p>
+                    <p className="mt-1">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {registration.status}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

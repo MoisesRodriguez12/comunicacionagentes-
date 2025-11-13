@@ -77,6 +77,13 @@ class EventAttendanceRequest(BaseModel):
     user_email: str
 
 
+class StudentRegistrationRequest(BaseModel):
+    student_name: str
+    student_email: str
+    student_id: str
+    event_id: str
+
+
 @app.get("/")
 def root():
     return {
@@ -104,6 +111,7 @@ def create_plan(event_request: EventRequest):
         event_details = event_request.model_dump()
         event_details["event_id"] = event_id
         event_details["status"] = "planning"
+        event_details["available_for_registration"] = False
         event_details["created_at"] = datetime.now().isoformat()
         
         event_acp_msg = database_agent.acp_protocol.create_write_request(
@@ -306,9 +314,39 @@ def execute_plan(plan_id: str):
         )
         notification_agent.receive_event(notify_msg)
         
+        # Si la ejecución fue exitosa (sin errores), marcar el evento como completado y disponible
+        if error_count == 0:
+            event_id = plan.get("event_details", {}).get("event_id")
+            if event_id:
+                # Actualizar el estado del evento a "completed" y "available_for_registration"
+                acp_update = database_agent.acp_protocol.create_update_request(
+                    message_id=str(uuid.uuid4()),
+                    sender="Ejecutor",
+                    collection="events",
+                    query_filter={"event_id": event_id},
+                    update_data={
+                        "status": "completed",
+                        "available_for_registration": True,
+                        "execution_completed_at": datetime.now().isoformat(),
+                        "plan_execution_id": execution_id
+                    }
+                )
+                
+                update_response = database_agent.process_acp_message(acp_update.model_dump())
+                
+                if update_response.status == "success":
+                    # Crear notificación adicional sobre la disponibilidad para inscripciones
+                    notification_agent.create_custom_notification(
+                        title="Evento Disponible para Inscripciones",
+                        body=f"El evento '{plan.get('event_details', {}).get('event_name')}' está ahora disponible para que los estudiantes se inscriban",
+                        level="info",
+                        data={"event_id": event_id, "plan_id": plan_id, "execution_id": execution_id}
+                    )
+        
         notification_id = notification_agent.create_custom_notification(
             title="Ejecucion Completada",
-            body=f"Ejecutadas {len(results)} tareas: {success_count} exitosas, {error_count} con errores",
+            body=f"Ejecutadas {len(results)} tareas: {success_count} exitosas, {error_count} con errores" + 
+                 (" - Evento disponible para inscripciones" if error_count == 0 else ""),
             level="success" if error_count == 0 else "warning",
             data={"plan_id": plan_id, "execution_id": execution_id}
         )
@@ -323,6 +361,7 @@ def execute_plan(plan_id: str):
                 "execution_id": execution_id,
                 "results": results,
                 "notification_id": notification_id,
+                "event_available_for_registration": error_count == 0,
                 "summary": {
                     "total": len(results),
                     "success": success_count,
@@ -373,6 +412,75 @@ def get_notifications():
                 "pending": notifications,
                 "history": history
             }
+        )
+        
+        return agui_response.model_dump()
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events/available")
+def get_available_events():
+    """Obtener eventos disponibles para estudiantes con cupos disponibles"""
+    try:
+        message_id = str(uuid.uuid4())
+        
+        # Crear solicitud AG-UI hacia el executor para obtener eventos con cupos
+        agui_request = agui_protocol.create_request(
+            message_id=message_id,
+            sender="UI",
+            receiver="Ejecutor", 
+            action="Base de datos",
+            payload={"operation": "get_available_events"}
+        )
+        
+        # Usar protocolo ACP para consultar eventos completados y disponibles para inscripción
+        acp_message = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="events",
+            query_filter={
+                "status": "completed",
+                "available_for_registration": True
+            },
+            sort={"event_date": 1}
+        )
+        
+        events_response = database_agent.process_acp_message(acp_message.model_dump())
+        
+        if events_response.status != "success":
+            raise HTTPException(status_code=500, detail="Error al obtener eventos")
+        
+        events_with_capacity = []
+        for event in events_response.data or []:
+            # Consultar registros para este evento
+            acp_registrations = database_agent.acp_protocol.create_query_request(
+                message_id=str(uuid.uuid4()),
+                sender="Ejecutor",
+                collection="student_registrations",
+                query_filter={"event_id": event.get("event_id")}
+            )
+            
+            registrations_response = database_agent.process_acp_message(acp_registrations.model_dump())
+            current_registrations = len(registrations_response.data or [])
+            max_capacity = event.get("expected_attendees", 0)
+            
+            event_with_capacity = {
+                **event,
+                "current_registrations": current_registrations,
+                "available_spots": max(0, max_capacity - current_registrations),
+                "is_full": current_registrations >= max_capacity
+            }
+            events_with_capacity.append(event_with_capacity)
+        
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            receiver="UI",
+            action="Base de datos",
+            status="success",
+            payload={"events": events_with_capacity}
         )
         
         return agui_response.model_dump()
@@ -656,6 +764,297 @@ def get_execution_status(execution_id: str):
         
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dashboard/stats")
+def get_dashboard_stats():
+    """Obtener estadísticas para el dashboard"""
+    try:
+        # Obtener eventos totales
+        acp_all_events = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="UI",
+            collection="events"
+        )
+        all_events_response = database_agent.process_acp_message(acp_all_events.model_dump())
+        
+        # Obtener eventos disponibles para inscripción
+        acp_available_events = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="UI",
+            collection="events",
+            query_filter={
+                "status": "completed",
+                "available_for_registration": True
+            }
+        )
+        available_events_response = database_agent.process_acp_message(acp_available_events.model_dump())
+        
+        # Obtener total de inscripciones de estudiantes
+        acp_registrations = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="UI",
+            collection="student_registrations"
+        )
+        registrations_response = database_agent.process_acp_message(acp_registrations.model_dump())
+        
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Database",
+            receiver="UI",
+            action="Base de datos",
+            status="success",
+            payload={
+                "stats": {
+                    "total_events": len(all_events_response.data or []),
+                    "available_events": len(available_events_response.data or []),
+                    "total_registrations": len(registrations_response.data or [])
+                }
+            }
+        )
+        
+        return agui_response.model_dump()
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/students/register")
+def register_student_to_event(registration: StudentRegistrationRequest):
+    """Registrar estudiante a un evento usando protocolos AG-UI y ACP"""
+    try:
+        message_id = str(uuid.uuid4())
+        
+        # Crear solicitud AG-UI hacia el executor
+        agui_request = agui_protocol.create_request(
+            message_id=message_id,
+            sender="UI",
+            receiver="Ejecutor",
+            action="Ejecutar",
+            payload={
+                "operation": "register_student",
+                "student_data": registration.model_dump()
+            }
+        )
+        
+        # Verificar que el evento existe y tiene cupos usando ACP
+        acp_event_check = database_agent.acp_protocol.create_read_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor", 
+            collection="events",
+            query_filter={"event_id": registration.event_id}
+        )
+        
+        event_response = database_agent.process_acp_message(acp_event_check.model_dump())
+        
+        if event_response.status != "success" or not event_response.data:
+            agui_error = agui_protocol.create_response(
+                message_id=str(uuid.uuid4()),
+                sender="Ejecutor",
+                receiver="UI",
+                action="Ejecutar",
+                status="error",
+                payload={"error": "Evento no encontrado"}
+            )
+            return agui_error.model_dump()
+        
+        event = event_response.data
+        max_capacity = event.get("expected_attendees", 0)
+        
+        # Verificar registros actuales usando ACP
+        acp_registrations = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="student_registrations", 
+            query_filter={"event_id": registration.event_id}
+        )
+        
+        registrations_response = database_agent.process_acp_message(acp_registrations.model_dump())
+        current_count = len(registrations_response.data or [])
+        
+        if current_count >= max_capacity:
+            agui_error = agui_protocol.create_response(
+                message_id=str(uuid.uuid4()),
+                sender="Ejecutor",
+                receiver="UI", 
+                action="Ejecutar",
+                status="error",
+                payload={"error": "El evento está lleno. No hay cupos disponibles."}
+            )
+            return agui_error.model_dump()
+        
+        # Verificar que el estudiante no esté ya registrado
+        acp_duplicate_check = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="student_registrations",
+            query_filter={
+                "event_id": registration.event_id,
+                "student_email": registration.student_email
+            }
+        )
+        
+        duplicate_response = database_agent.process_acp_message(acp_duplicate_check.model_dump())
+        
+        if duplicate_response.data and len(duplicate_response.data) > 0:
+            agui_error = agui_protocol.create_response(
+                message_id=str(uuid.uuid4()),
+                sender="Ejecutor",
+                receiver="UI",
+                action="Ejecutar", 
+                status="error",
+                payload={"error": "Ya estás registrado en este evento"}
+            )
+            return agui_error.model_dump()
+        
+        # Crear registro usando ACP
+        registration_data = {
+            "registration_id": str(uuid.uuid4()),
+            "event_id": registration.event_id,
+            "student_name": registration.student_name,
+            "student_email": registration.student_email,
+            "student_id": registration.student_id,
+            "registered_at": datetime.now().isoformat(),
+            "status": "confirmed"
+        }
+        
+        acp_write = database_agent.acp_protocol.create_write_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="student_registrations",
+            data=registration_data
+        )
+        
+        write_response = database_agent.process_acp_message(acp_write.model_dump())
+        
+        if write_response.status != "success":
+            agui_error = agui_protocol.create_response(
+                message_id=str(uuid.uuid4()),
+                sender="Ejecutor", 
+                receiver="UI",
+                action="Ejecutar",
+                status="error",
+                payload={"error": "Error al registrar estudiante"}
+            )
+            return agui_error.model_dump()
+        
+        # Crear notificación
+        notification_id = notification_agent.create_custom_notification(
+            title="Registro Exitoso",
+            body=f"Estudiante {registration.student_name} registrado exitosamente en el evento '{event.get('event_name')}'",
+            level="success",
+            data={
+                "event_id": registration.event_id,
+                "student_email": registration.student_email,
+                "registration_id": registration_data["registration_id"]
+            }
+        )
+        
+        # Respuesta AG-UI exitosa
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            receiver="UI",
+            action="Ejecutar", 
+            status="success",
+            payload={
+                "registration": registration_data,
+                "event": event,
+                "notification_id": notification_id,
+                "remaining_spots": max_capacity - (current_count + 1)
+            }
+        )
+        
+        return agui_response.model_dump()
+        
+    except Exception as e:
+        agui_error = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            receiver="UI",
+            action="Ejecutar",
+            status="error",
+            payload={"error": str(e)}
+        )
+        return agui_error.model_dump()
+
+
+@app.get("/api/students/{student_email}/registrations")
+def get_student_registrations(student_email: str):
+    """Obtener registros de un estudiante"""
+    try:
+        message_id = str(uuid.uuid4())
+        
+        agui_request = agui_protocol.create_request(
+            message_id=message_id,
+            sender="UI",
+            receiver="Ejecutor",
+            action="Base de datos",
+            payload={"operation": "get_student_registrations", "student_email": student_email}
+        )
+        
+        acp_message = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="student_registrations",
+            query_filter={"student_email": student_email},
+            sort={"registered_at": -1}
+        )
+        
+        response = database_agent.process_acp_message(acp_message.model_dump())
+        
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            receiver="UI",
+            action="Base de datos",
+            status="success" if response.status == "success" else "error",
+            payload={"registrations": response.data or []}
+        )
+        
+        return agui_response.model_dump()
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events/{event_id}/registrations")
+def get_event_registrations(event_id: str):
+    """Obtener registros de un evento específico"""
+    try:
+        message_id = str(uuid.uuid4())
+        
+        agui_request = agui_protocol.create_request(
+            message_id=message_id,
+            sender="UI", 
+            receiver="Ejecutor",
+            action="Base de datos",
+            payload={"operation": "get_event_registrations", "event_id": event_id}
+        )
+        
+        acp_message = database_agent.acp_protocol.create_query_request(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            collection="student_registrations",
+            query_filter={"event_id": event_id},
+            sort={"registered_at": -1}
+        )
+        
+        response = database_agent.process_acp_message(acp_message.model_dump())
+        
+        agui_response = agui_protocol.create_response(
+            message_id=str(uuid.uuid4()),
+            sender="Ejecutor",
+            receiver="UI",
+            action="Base de datos",
+            status="success" if response.status == "success" else "error", 
+            payload={"registrations": response.data or []}
+        )
+        
+        return agui_response.model_dump()
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
