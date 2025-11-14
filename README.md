@@ -493,6 +493,106 @@ El servidor FastAPI muestra en consola todas las peticiones recibidas y procesad
 
 ---
 
+ ## Pruebas
+
+    Pruebas de Integración
+Flujo Completo de Creación de Evento
+
+Entrada: Datos del evento desde la UI
+Planificación: Generación automática del plan por Planning Agent
+Almacenamiento: Guardado en MongoDB mediante Database Agent
+Notificación: Confirmación al usuario
+
+Resultado: Flujo completado exitosamente en promedio de 3-5 segundos
+Flujo de Ejecución de Plan
+
+Inicio: Solicitud de ejecución desde la UI
+Comunicación A2A: Planning Agent envía tareas a Execution Agent
+Ejecución: Procesamiento secuencial de tareas
+Actualización: Cambio de estado del evento
+Notificaciones: Actualización en tiempo real
+
+Resultado: Ejecución exitosa con manejo correcto de dependencias
+Flujo de Inscripción de Estudiantes
+
+Verificación: Comprobación de cupos disponibles
+Validación: Prevención de inscripciones duplicadas
+Registro: Almacenamiento en base de datos
+Actualización: Reflejo inmediato en la UI
+
+Resultado: Sistema de cupos funcionando correctamente
+
+    Pruebas de Sistema
+
+Eventos concurrentes: Creación de 10 eventos simultáneos
+Inscripciones masivas: 50 estudiantes registrándose al mismo tiempo
+Resultado: Sistema estable con tiempos de respuesta menores a 2 segundos
+
+Pruebas de UI/UX
+
+Responsividad: Verificación en diferentes tamaños de pantalla
+Navegación: Flujo intuitivo entre vistas
+Feedback visual: Indicadores de carga y notificaciones claras
+Resultado: Interfaz funcional y amigable
+
+La interfaz nos da mucho beneficio para visualizar de la mejor manera posible lo que queremos obtener, ya que es muy fácil navegar por ella y verificar el estado de los eventos y planes, ademas nos permite obtener un centro de notificaciones que nos da retroalimentación de lo que ocurre en el sistema.
+
+    Endpoints probados con diferentes escenarios:
+
+-POST /api/plan - Creación de planes
+
+-POST /api/execute/{plan_id} - Ejecución de planes
+
+-GET /api/events/available - Consulta de eventos disponibles
+
+-POST /api/students/register - Registro de estudiantes
+
+-GET /api/notifications - Obtención de notificaciones
+
+-GET /api/dashboard/stats - Estadísticas del dashboard
+
+
+ ## Conclusiones
+
+1. Sistema Multiagente Funcional
+Se implementó exitosamente un sistema multiagente basado en protocolos de comunicación estandarizados que permite:
+
+Modularidad: Cada agente tiene responsabilidades bien definidas
+Escalabilidad: Fácil adición de nuevos agentes o funcionalidades
+Mantenibilidad: Código organizado y documentado
+
+2. Integración con IA Generativa
+La integración con Google Gemini AI demostró ser efectiva para:
+
+Generar planes de eventos contextualizados y detallados
+Crear tareas con dependencias lógicas
+Estimar duraciones y recursos necesarios
+
+3. Protocolos de Comunicación Robustos
+Los 4 protocolos implementados (AG-UI, ANP, A2A, ACP) proporcionan:
+
+Consistencia: Formato uniforme de mensajes
+Trazabilidad: Seguimiento completo de operaciones
+Interoperabilidad: Comunicación fluida entre componentes
+
+4. Interfaz de Usuario Intuitiva
+El frontend desarrollado con React y TailwindCSS ofrece:
+
+Experiencia fluida: Navegación intuitiva entre módulos
+Feedback visual: Notificaciones y estados claros
+Responsividad: Adaptación a diferentes dispositivos
+
+### Por lo que conlcuimos
+Este proyecto demuestra exitosamente cómo la combinación de:
+
+Arquitectura multiagente para distribución de responsabilidades
+IA generativa para automatización inteligente
+Protocolos estandarizados para comunicación robusta
+Diseño centrado en el usuario para experiencia fluida
+
+Puedimos resolver problemas complejos de gestión de eventos de manera eficiente y escalable.
+El sistema no solo cumple con los objetivos planteados, sino que sienta las bases para un ecosistema extensible que puede adaptarse a las necesidades cambiantes de instituciones educativas.
+
 ### Informacion del Proyecto
 
 **Version**: 1.0.0
@@ -504,3 +604,5 @@ El servidor FastAPI muestra en consola todas las peticiones recibidas y procesad
 **Repositorio**: MoisesRodriguez12/comunicacionagentes-
 
 **Contacto**: Para preguntas o soporte, abrir un issue en el repositorio de GitHub
+
+
