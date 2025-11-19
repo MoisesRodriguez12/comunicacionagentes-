@@ -353,8 +353,8 @@ function App() {
               onClick={() => setActiveView('dashboard')}
               className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 ${
                 activeView === 'dashboard'
-                  ? 'border-white text-white bg-white/20'
-                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+                  ? 'border-white-500 text-white bg-white-500/30'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white-500/50 hover:bg-white-500/10'
               }`}
             >
               <HomeIcon className="w-6 h-6" />
@@ -365,8 +365,8 @@ function App() {
               onClick={() => setActiveView('events')}
               className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 ${
                 activeView === 'events'
-                  ? 'border-white text-white bg-white/20'
-                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+                  ? 'border-white-500 text-white bg-white-500/30'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white-500/50 hover:bg-white-500/10'
               }`}
             >
               <CalendarDaysIcon className="w-6 h-6" />
@@ -377,8 +377,8 @@ function App() {
               onClick={() => setActiveView('plans')}
               className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 ${
                 activeView === 'plans'
-                  ? 'border-white text-white bg-white/20'
-                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+                   ? 'border-white-500 text-white bg-white-500/30'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white-500/50 hover:bg-white-500/10'
               }`}
             >
               <ClipboardDocumentListIcon className="w-6 h-6" />
@@ -389,8 +389,8 @@ function App() {
               onClick={() => setActiveView('notifications')}
               className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 relative ${
                 activeView === 'notifications'
-                  ? 'border-white text-white bg-white/20'
-                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+                   ? 'border-white-500 text-white bg-white-500/30'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white-500/50 hover:bg-white-500/10'
               }`}
             >
               <BellIcon className="w-6 h-6" />
@@ -406,8 +406,8 @@ function App() {
               onClick={() => setActiveView('students')}
               className={`flex items-center space-x-3 px-6 py-4 border-b-4 font-bold text-base transition-all duration-300 ${
                 activeView === 'students'
-                  ? 'border-white text-white bg-white/20'
-                  : 'border-transparent text-gray-300 hover:text-white hover:border-white/50 hover:bg-white/10'
+                   ? 'border-white-500 text-white bg-white-500/30'
+                  : 'border-transparent text-gray-300 hover:text-white hover:border-white-500/50 hover:bg-white-500/10'
               }`}
             >
               <AcademicCapIcon className="w-6 h-6" />
@@ -498,37 +498,37 @@ function DashboardView({ events, plans, notifications, dashboardStats, loading, 
       name: 'Planes Activos',
       value: pendingPlans,
       icon: RocketLaunchIcon,
-      color: 'from-blue-500 to-blue-600',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200'
+      color: 'from-black to-gray-900',
+      textColor: 'text-gray-900',
+      bgColor: 'bg-gray-50',
+      borderColor: 'border-gray-200'
     },
     {
       name: 'Eventos Disponibles',
       value: dashboardStats?.available_events || 0,
       icon: CheckBadgeIcon,
-      color: 'from-green-500 to-green-600',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200'
+      color: 'from-red-500 to-red-600',
+      textColor: 'text-red-600',
+      bgColor: 'bg-red-50',
+      borderColor: 'border-red-200'
     },
     {
       name: 'Inscripciones Totales',
       value: dashboardStats?.total_registrations || 0,
       icon: UserGroupIcon,
-      color: 'from-purple-500 to-purple-600',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200'
+      color: 'from-black to-gray-900',
+      textColor: 'text-gray-900',
+      bgColor: 'bg-gray-50',
+      borderColor: 'border-gray-200'
     },
     {
       name: 'Notificaciones',
       value: totalNotifications,
       icon: BellIcon,
-      color: 'from-yellow-500 to-yellow-600',
-      textColor: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200'
+      color: 'from-red-500 to-red-600',
+      textColor: 'text-red-600',
+      bgColor: 'bg-red-50',
+      borderColor: 'border-red-200'
     }
   ]
 
@@ -544,14 +544,14 @@ function DashboardView({ events, plans, notifications, dashboardStats, loading, 
       name: 'Ver Planes',
       description: 'Gestionar planificación',
       icon: ChartPieIcon,
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-red-500 to-red-600',
       action: onViewPlans
     },
     {
       name: 'Notificaciones',
       description: 'Revisar actualizaciones',
       icon: BellIcon,
-      color: 'from-green-500 to-green-600',
+      color: 'from-red-500 to-red-600',
       action: onViewNotifications
     }
   ]
@@ -719,7 +719,7 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
   const getStatusConfig = (status) => {
     const configs = {
       planning: {
-        color: 'bg-blue-100 text-blue-900 border-blue-300',
+        color: 'bg-red-100 text-red-900 border-red-300',
         text: 'Planificando'
       },
       executing: {
@@ -727,7 +727,7 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
         text: 'En Ejecución'
       },
       completed: {
-        color: 'bg-green-100 text-green-900 border-green-300',
+        color: 'bg-gray-100 text-gray-900 border-gray-300',
         text: 'Completado'
       }
     }
@@ -820,14 +820,14 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
               </div>
               
               <div>
-                <label className="block text-base font-bold text-black mb-3">
+                <label className="block text-base font-bold text-gray-900 mb-3">
                   Fecha del Evento
                 </label>
                 <input
                   type="date"
                   value={formData.event_date}
                   onChange={(e) => setFormData({...formData, event_date: e.target.value})}
-                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-black bg-white shadow-black"
+                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-gray-900 bg-white shadow-black"
                   required
                 />
               </div>
@@ -842,7 +842,7 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
                     type="number"
                     value={formData.expected_attendees}
                     onChange={(e) => setFormData({...formData, expected_attendees: parseInt(e.target.value)})}
-                    className="w-full pl-12 pr-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-black bg-white shadow-black"
+                    className="w-full pl-12 pr-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-gray-900 bg-white shadow-black"
                     placeholder="50"
                     required
                   />
@@ -859,7 +859,7 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
                     type="number"
                     value={formData.budget}
                     onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
-                    className="w-full pl-12 pr-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-black bg-white shadow-black"
+                    className="w-full pl-12 pr-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-gray-900 bg-white shadow-black"
                     placeholder="1000"
                     required
                   />
@@ -867,13 +867,13 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-base font-bold text-black mb-3">
+                <label className="block text-base font-bold text-gray-900 mb-3">
                   Descripción del Evento
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-black bg-white shadow-black"
+                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-gray-900 bg-white shadow-black"
                   rows="5"
                   placeholder="Describe los objetivos, actividades y detalles del evento..."
                   required
@@ -881,14 +881,14 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
               </div>
               
               <div className="md:col-span-2">
-                <label className="block text-base font-bold text-black mb-3">
+                <label className="block text-base font-bold text-gray-900 mb-3">
                   Email del Organizador
                 </label>
                 <input
                   type="email"
                   value={formData.organizer_email}
                   onChange={(e) => setFormData({...formData, organizer_email: e.target.value})}
-                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-black bg-white shadow-black"
+                  className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500 focus:border-red-500 transition-all duration-200 font-semibold text-gray-900 bg-white shadow-black"
                   placeholder="organizador@universidad.edu"
                   required
                 />
@@ -925,7 +925,7 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
             <div className="bg-red-gradient rounded-full w-20 h-20 flex items-center justify-center mx-auto shadow-red-lg">
               <CalendarDaysIcon className="h-10 w-10 text-white" />
             </div>
-            <h3 className="mt-6 text-xl font-bold text-black">No hay eventos</h3>
+            <h3 className="mt-6 text-xl font-bold text-gray-900">No hay eventos</h3>
             <p className="mt-2 text-base text-gray-600 font-medium">Comienza creando tu primer evento universitario.</p>
           </div>
         ) : (
@@ -984,10 +984,10 @@ function EventsView({ events, showForm, setShowForm, onCreateEvent, onReplanEven
                           <div 
                             className={`h-2 rounded-full transition-all duration-300 ${
                               (eventRegistrations[event.event_id] || []).length >= event.expected_attendees
-                                ? 'bg-red-500' 
+                                ? 'bg-black' 
                                 : (eventRegistrations[event.event_id] || []).length > event.expected_attendees * 0.8
-                                  ? 'bg-yellow-500'
-                                  : 'bg-green-500'
+                                  ? 'bg-gray-500'
+                                  : 'bg-red-500'
                             }`}
                             style={{ 
                               width: `${Math.min(((eventRegistrations[event.event_id] || []).length / event.expected_attendees) * 100, 100)}%` 
@@ -1071,7 +1071,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
         icon: PlayIcon
       },
       completed: {
-        color: 'bg-green-100 text-green-800 border-green-300',
+        color: 'bg-red-100 text-red-800 border-red-300',
         text: 'Completado',
         icon: CheckCircleIcon
       }
@@ -1150,7 +1150,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h4 className="font-bold text-xl text-black mb-3 leading-tight">
+                        <h4 className="font-bold text-xl text-gray-900 mb-3 leading-tight">
                           {plan.event_details.event_name}
                         </h4>
                         <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border-2 ${statusConfig.color} shadow-black`}>
@@ -1161,7 +1161,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                     </div>
                     
                     <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 mb-4">
-                      <p className="text-sm text-black font-medium leading-relaxed">{plan.plan_summary}</p>
+                      <p className="text-sm text-gray-900 font-medium leading-relaxed">{plan.plan_summary}</p>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-3 mb-6">
@@ -1173,18 +1173,18 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                         <p className="text-xs text-red-600 font-medium mt-1">Tareas</p>
                       </div>
                       <div className="bg-black/5 rounded-xl p-3 border-2 border-black/20">
-                        <div className="flex items-center text-black font-bold">
+                        <div className="flex items-center text-gray-900 font-bold">
                           <ClockIcon className="w-4 h-4 mr-2" />
                           {plan.estimated_duration}
                         </div>
                         <p className="text-xs text-gray-600 font-medium mt-1">Duración</p>
                       </div>
-                      <div className="bg-blue-50 rounded-xl p-3 border-2 border-blue-200">
-                        <div className="flex items-center text-blue-800 font-bold">
+                      <div className="bg-gray-50 rounded-xl p-3 border-2 border-gray-200">
+                        <div className="flex items-center text-gray-900 font-bold">
                           <UsersIcon className="w-4 h-4 mr-2" />
                           {(planRegistrations[plan.event_details?.event_id] || []).length}/{plan.event_details?.expected_attendees || 0}
                         </div>
-                        <p className="text-xs text-blue-600 font-medium mt-1">Inscritos</p>
+                        <p className="text-xs text-gray-600 font-medium mt-1">Inscritos</p>
                       </div>
                     </div>
                     
@@ -1201,10 +1201,10 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                           <div 
                             className={`h-2 rounded-full transition-all duration-300 ${
                               (planRegistrations[plan.event_details.event_id] || []).length >= plan.event_details.expected_attendees
-                                ? 'bg-red-500' 
+                                ? 'bg-black' 
                                 : (planRegistrations[plan.event_details.event_id] || []).length > plan.event_details.expected_attendees * 0.8
-                                  ? 'bg-yellow-500'
-                                  : 'bg-green-500'
+                                  ? 'bg-gray-500'
+                                  : 'bg-red-500'
                             }`}
                             style={{ 
                               width: `${Math.min(((planRegistrations[plan.event_details.event_id] || []).length / plan.event_details.expected_attendees) * 100, 100)}%` 
@@ -1215,8 +1215,8 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                           {(planRegistrations[plan.event_details.event_id] || []).length >= plan.event_details.expected_attendees 
                             ? '🔴 Evento lleno' 
                             : (planRegistrations[plan.event_details.event_id] || []).length > plan.event_details.expected_attendees * 0.8
-                              ? '🟡 Pocos cupos' 
-                              : '🟢 Cupos disponibles'
+                              ? '⚫ Pocos cupos' 
+                              : '🔴 Cupos disponibles'
                           }
                         </div>
                       </div>
@@ -1229,7 +1229,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                           onExecute(plan.plan_id)
                         }}
                         disabled={loading}
-                        className="w-full bg-red-gradient text-black px-6 py-4 rounded-xl font-bold text-base hover:shadow-red border-3 border-red-800 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] uppercase tracking-wide"
+                        className="w-full bg-red-gradient text-white px-6 py-4 rounded-xl font-bold text-base hover:shadow-red border-3 border-red-800 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] uppercase tracking-wide"
                       >
                         {isExecuting ? (
                           <div className="flex items-center justify-center">
@@ -1261,29 +1261,29 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
           {selectedPlan ? (
             <div className="bg-white rounded-2xl shadow-premium border-4 border-black/20">
               <div className="bg-red-gradient rounded-t-2xl px-8 py-6 border-b-4 border-red-800">
-                <h3 className="text-2xl font-bold text-black tracking-tight">Detalles del Plan</h3>
+                <h3 className="text-2xl font-bold text-white tracking-tight">Detalles del Plan</h3>
                 <p className="text-red-600 text-base mt-2 font-medium">{selectedPlan.event_details.event_name}</p>
               </div>
               
               <div className="p-8">
                 <div className="mb-8">
-                  <h4 className="text-base font-bold text-black uppercase tracking-wide mb-4 border-b-2 border-red-600 pb-2">
+                  <h4 className="text-base font-bold text-gray-900 uppercase tracking-wide mb-4 border-b-2 border-red-600 pb-2">
                     Resumen del Plan
                   </h4>
                   <div className="bg-gray-50 rounded-xl p-6 border-3 border-gray-200">
-                    <p className="text-black font-medium leading-relaxed">{selectedPlan.plan_summary}</p>
+                    <p className="text-gray-900 font-medium leading-relaxed">{selectedPlan.plan_summary}</p>
                   </div>
                 </div>
 
                 <div className="mb-8">
-                  <h4 className="text-base font-bold text-black uppercase tracking-wide mb-4 border-b-2 border-red-600 pb-2">
+                  <h4 className="text-base font-bold text-gray-900 uppercase tracking-wide mb-4 border-b-2 border-red-600 pb-2">
                     Tareas del Plan ({selectedPlan.tasks.length})
                   </h4>
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {selectedPlan.tasks.map((task, index) => (
                       <div key={task.task_id} className="bg-white rounded-xl p-6 border-4 border-red-100 shadow-black hover:shadow-black-lg transition-all duration-200">
                         <div className="flex items-start justify-between mb-4">
-                          <h5 className="font-bold text-lg text-black leading-tight">
+                          <h5 className="font-bold text-lg text-gray-900 leading-tight">
                             {index + 1}. {task.task_name}
                           </h5>
                           <span className={`px-3 py-2 rounded-full text-sm font-bold border-2 ${getPriorityColor(task.priority)} shadow-black uppercase`}>
@@ -1292,7 +1292,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                         </div>
                         
                         <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 mb-4">
-                          <p className="text-sm text-black font-medium leading-relaxed">{task.description}</p>
+                          <p className="text-sm text-gray-900 font-medium leading-relaxed">{task.description}</p>
                         </div>
                         
                         {task.dependencies.length > 0 && (
@@ -1311,18 +1311,18 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
                 <div className="border-t-4 border-red-600 pt-6">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="bg-red-gradient rounded-xl p-6 shadow-red-lg border-2 border-red-800">
-                      <div className="flex items-center text-black mb-2">
+                      <div className="flex items-center text-white-600 mb-2">
                         <ChartBarIcon className="w-6 h-6 mr-3" />
                         Total de Tareas
                       </div>
-                      <p className="text-black font-bold text-3xl">{selectedPlan.total_tasks}</p>
+                      <p className="text-white-600 font-bold text-3xl">{selectedPlan.total_tasks}</p>
                     </div>
                     <div className="bg-black-gradient rounded-xl p-6 shadow-black-lg border-2 border-black">
-                      <div className="flex items-center text-black mb-2">
+                      <div className="flex items-center text-white-600 mb-2">
                         <ClockIcon className="w-6 h-6 mr-3" />
                         Duración Estimada
                       </div>
-                      <p className="text-black font-bold text-3xl">{selectedPlan.estimated_duration}</p>
+                      <p className="text-white-600 font-bold text-3xl">{selectedPlan.estimated_duration}</p>
                     </div>
                   </div>
                 </div>
@@ -1333,7 +1333,7 @@ function PlansView({ plans, onExecute, loading, executingPlanId, selectedPlan, s
               <div className="bg-red-gradient rounded-full w-20 h-20 flex items-center justify-center mx-auto shadow-red-lg">
                 <EyeIcon className="h-10 w-10 text-white" />
               </div>
-              <h3 className="mt-6 text-xl font-bold text-black">Selecciona un Plan</h3>
+              <h3 className="mt-6 text-xl font-bold text-gray-900">Selecciona un Plan</h3>
               <p className="mt-2 text-base text-gray-600 font-medium">
                 Haz clic en cualquier plan de la lista para ver sus detalles completos.
               </p>
@@ -1349,10 +1349,10 @@ function NotificationsView({ notifications }) {
   const getLevelConfig = (level) => {
     const configs = {
       success: {
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-200',
-        textColor: 'text-green-800',
-        iconColor: 'text-green-500',
+        bgColor: 'bg-gray-50',
+        borderColor: 'border-gray-200',
+        textColor: 'text-red-800',
+        iconColor: 'text-red-500',
         icon: CheckCircleIconSolid
       },
       error: {
@@ -1363,17 +1363,17 @@ function NotificationsView({ notifications }) {
         icon: XCircleIconSolid
       },
       warning: {
-        bgColor: 'bg-yellow-50',
-        borderColor: 'border-yellow-200',
-        textColor: 'text-yellow-800',
-        iconColor: 'text-yellow-500',
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200',
+        textColor: 'text-red-800',
+        iconColor: 'text-red-500',
         icon: ExclamationTriangleIconSolid
       },
       info: {
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-800',
-        iconColor: 'text-blue-500',
+        bgColor: 'bg-gray-50',
+        borderColor: 'border-gray-200',
+        textColor: 'text-gray-900',
+        iconColor: 'text-gray-600',
         icon: InformationCircleIconSolid
       }
     }
@@ -1420,7 +1420,7 @@ function NotificationsView({ notifications }) {
       <div className="space-y-4">
         {notifications.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-16 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <BellIcon className="h-8 w-8 text-white" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay notificaciones</h3>
@@ -1500,8 +1500,8 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-green-700 to-black rounded-3xl p-8 md:p-12 mb-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent"></div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-red-600 via-red-700 to-black rounded-3xl p-8 md:p-12 mb-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent"></div>
         <div className="relative flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-black rounded-2xl flex items-center justify-center border-2 border-white/30">
@@ -1527,7 +1527,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
       {showInfoForm && (
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
               <UserPlusIcon className="w-5 h-5 text-white" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">Información Personal</h3>
@@ -1544,7 +1544,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                   required
                   value={studentInfo.name}
                   onChange={(e) => setStudentInfo({...studentInfo, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="Tu nombre completo"
                 />
               </div>
@@ -1558,7 +1558,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                   required
                   value={studentInfo.email}
                   onChange={(e) => setStudentInfo({...studentInfo, email: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="tu@email.com"
                 />
               </div>
@@ -1572,7 +1572,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                   required
                   value={studentInfo.studentId}
                   onChange={(e) => setStudentInfo({...studentInfo, studentId: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="Ej: EST2024001"
                 />
               </div>
@@ -1581,7 +1581,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200"
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all duration-200"
               >
                 Guardar Información
               </button>
@@ -1595,7 +1595,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
         <div className="flex justify-end">
           <button
             onClick={() => setShowInfoForm(true)}
-            className="text-green-600 hover:text-green-700 font-medium text-sm"
+            className="text-red-600 hover:text-red-700 font-medium text-sm"
           >
             Editar información personal
           </button>
@@ -1609,12 +1609,12 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
           <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-200">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
                   <CalendarDaysIcon className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Eventos Disponibles</h3>
               </div>
-              <span className="bg-green-100 text-green-800 text-sm font-bold px-3 py-2 rounded-full">
+              <span className="bg-red-100 text-red-800 text-sm font-bold px-3 py-2 rounded-full">
                 {availableEvents.filter(e => !e.is_full).length} disponibles
               </span>
             </div>
@@ -1622,7 +1622,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
 
           {availableEvents.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 text-center py-16">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CalendarDaysIcon className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay eventos disponibles</h3>
@@ -1637,7 +1637,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="text-lg font-bold text-gray-900">{event.event_name}</h4>
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                          <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
                             {event.event_type}
                           </span>
                         </div>
@@ -1681,10 +1681,10 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                             <div 
                               className={`h-2 rounded-full ${
                                 event.is_full 
-                                  ? 'bg-red-500' 
+                                  ? 'bg-black' 
                                   : event.available_spots < 5 
-                                    ? 'bg-yellow-500' 
-                                    : 'bg-green-500'
+                                    ? 'bg-gray-500' 
+                                    : 'bg-red-500'
                               }`}
                               style={{ 
                                 width: `${(event.current_registrations / event.expected_attendees) * 100}%` 
@@ -1704,7 +1704,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
                           <button
                             onClick={() => onRegisterToEvent(event.event_id)}
                             disabled={loading || !studentInfo.name}
-                            className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                           >
                             <CheckBadgeIcon className="w-5 h-5" />
                             <span>Inscribirse</span>
@@ -1724,12 +1724,12 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
           <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
                   <CheckBadgeIcon className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Mis Inscripciones</h3>
               </div>
-              <span className="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-2 rounded-full">
+              <span className="bg-red-100 text-red-800 text-sm font-bold px-3 py-2 rounded-full">
                 {studentRegistrations.length}
               </span>
             </div>
@@ -1737,7 +1737,7 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
 
           {studentRegistrations.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 text-center py-12">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckBadgeIcon className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 mb-1">Sin inscripciones</h3>
@@ -1748,13 +1748,13 @@ function StudentsView({ availableEvents, studentRegistrations, studentInfo, setS
               {studentRegistrations.map((registration) => (
                 <div key={registration.registration_id} className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
                   <div className="flex items-center space-x-3 mb-2">
-                    <CheckBadgeIcon className="w-5 h-5 text-green-500" />
+                    <CheckBadgeIcon className="w-5 h-5 text-red-500" />
                     <span className="font-medium text-gray-900">Evento #{registration.event_id.slice(-8)}</span>
                   </div>
                   <div className="text-sm text-gray-600">
                     <p>Registrado: {new Date(registration.registered_at).toLocaleDateString('es-ES')}</p>
                     <p className="mt-1">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         {registration.status}
                       </span>
                     </p>
