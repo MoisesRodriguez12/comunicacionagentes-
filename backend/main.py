@@ -827,6 +827,8 @@ def register_student_to_event(registration: StudentRegistrationRequest):
     try:
         message_id = str(uuid.uuid4())
         
+        print(f"DEBUG: Iniciando registro para estudiante: {registration.student_email}")
+        
         # Crear solicitud AG-UI hacia el executor
         agui_request = agui_protocol.create_request(
             message_id=message_id,
@@ -847,9 +849,11 @@ def register_student_to_event(registration: StudentRegistrationRequest):
             query_filter={"event_id": registration.event_id}
         )
         
+        print(f"DEBUG: Verificando evento: {registration.event_id}")
         event_response = database_agent.process_acp_message(acp_event_check.model_dump())
         
         if event_response.status != "success" or not event_response.data:
+            print(f"ERROR: Evento no encontrado: {event_response}")
             agui_error = agui_protocol.create_response(
                 message_id=str(uuid.uuid4()),
                 sender="Ejecutor",
@@ -862,6 +866,7 @@ def register_student_to_event(registration: StudentRegistrationRequest):
         
         event = event_response.data
         max_capacity = event.get("expected_attendees", 0)
+        print(f"DEBUG: Evento encontrado. Capacidad: {max_capacity}")
         
         # Verificar registros actuales usando ACP
         acp_registrations = database_agent.acp_protocol.create_query_request(
@@ -871,10 +876,13 @@ def register_student_to_event(registration: StudentRegistrationRequest):
             query_filter={"event_id": registration.event_id}
         )
         
+        print("DEBUG: Consultando registros existentes...")
         registrations_response = database_agent.process_acp_message(acp_registrations.model_dump())
         current_count = len(registrations_response.data or [])
+        print(f"DEBUG: Registros actuales: {current_count}")
         
         if current_count >= max_capacity:
+            print(f"ERROR: Evento lleno ({current_count} >= {max_capacity})")
             agui_error = agui_protocol.create_response(
                 message_id=str(uuid.uuid4()),
                 sender="Ejecutor",
@@ -896,9 +904,11 @@ def register_student_to_event(registration: StudentRegistrationRequest):
             }
         )
         
+        print("DEBUG: Verificando duplicados...")
         duplicate_response = database_agent.process_acp_message(acp_duplicate_check.model_dump())
         
         if duplicate_response.data and len(duplicate_response.data) > 0:
+            print(f"ERROR: Estudiante ya registrado")
             agui_error = agui_protocol.create_response(
                 message_id=str(uuid.uuid4()),
                 sender="Ejecutor",
@@ -920,6 +930,7 @@ def register_student_to_event(registration: StudentRegistrationRequest):
             "status": "confirmed"
         }
         
+        print(f"DEBUG: Creando registro: {registration_data['registration_id']}")
         acp_write = database_agent.acp_protocol.create_write_request(
             message_id=str(uuid.uuid4()),
             sender="Ejecutor",
@@ -928,15 +939,17 @@ def register_student_to_event(registration: StudentRegistrationRequest):
         )
         
         write_response = database_agent.process_acp_message(acp_write.model_dump())
+        print(f"DEBUG: Respuesta de escritura: {write_response.status}")
         
         if write_response.status != "success":
+            print(f"ERROR: Error al escribir: {write_response}")
             agui_error = agui_protocol.create_response(
                 message_id=str(uuid.uuid4()),
                 sender="Ejecutor", 
                 receiver="UI",
                 action="Ejecutar",
                 status="error",
-                payload={"error": "Error al registrar estudiante"}
+                payload={"error": f"Error al registrar estudiante: {write_response.error_message}"}
             )
             return agui_error.model_dump()
         
@@ -952,6 +965,7 @@ def register_student_to_event(registration: StudentRegistrationRequest):
             }
         )
         
+        print("DEBUG: Registro completado exitosamente")
         # Respuesta AG-UI exitosa
         agui_response = agui_protocol.create_response(
             message_id=str(uuid.uuid4()),
@@ -970,13 +984,17 @@ def register_student_to_event(registration: StudentRegistrationRequest):
         return agui_response.model_dump()
         
     except Exception as e:
+        print(f"ERROR: Excepción en registro: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
         agui_error = agui_protocol.create_response(
             message_id=str(uuid.uuid4()),
             sender="Ejecutor",
             receiver="UI",
             action="Ejecutar",
             status="error",
-            payload={"error": str(e)}
+            payload={"error": f"Error interno: {str(e)}"}
         )
         return agui_error.model_dump()
 

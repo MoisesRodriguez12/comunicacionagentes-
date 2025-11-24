@@ -24,7 +24,8 @@ class DatabaseAgent:
             "tasks": self.db.tasks,
             "executions": self.db.executions,
             "notifications": self.db.notifications,
-            "logs": self.db.logs
+            "logs": self.db.logs,
+            "student_registrations": self.db.student_registrations
         }
         
         self._initialize_collections()
@@ -47,6 +48,12 @@ class DatabaseAgent:
         if "plans" not in existing_collections:
             self.collections["plans"].create_index("plan_id", unique=True)
             self.collections["plans"].create_index("event_id")
+        
+        if "student_registrations" not in existing_collections:
+            self.collections["student_registrations"].create_index("registration_id", unique=True)
+            self.collections["student_registrations"].create_index("event_id")
+            self.collections["student_registrations"].create_index("student_email")
+            self.collections["student_registrations"].create_index([("event_id", 1), ("student_email", 1)], unique=True)
     
     def process_acp_message(self, message: Dict[str, Any]) -> ACPResponse:
         if not self.acp_protocol.validate_message(message):
